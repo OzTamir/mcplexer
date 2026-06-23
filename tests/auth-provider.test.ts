@@ -1,3 +1,6 @@
+import { mkdtemp } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import { createAuthProvider } from "../src/auth-provider.js"
@@ -33,5 +36,33 @@ describe("createAuthProvider", () => {
       grant_types: ["client_credentials"],
       scope: "calendar.read",
     })
+  })
+
+  it("creates a persistent browser OAuth provider", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "mcplexer-oauth-"))
+    const provider = createAuthProvider({
+      kind: "browser",
+      callbackPort: 49887,
+      openBrowser: false,
+      storePath: join(directory, "tokens.json"),
+      clientName: "MCPlexer Notion",
+      scope: "read write",
+    })
+    if (provider === undefined) {
+      throw new Error("Expected browser auth provider")
+    }
+
+    expect(provider.redirectUrl?.toString()).toBe("http://127.0.0.1:49887/oauth/callback")
+    expect(provider.clientMetadata).toMatchObject({
+      client_name: "MCPlexer Notion",
+      redirect_uris: ["http://127.0.0.1:49887/oauth/callback"],
+      scope: "read write",
+    })
+
+    await provider.saveCodeVerifier("verifier")
+    await provider.saveTokens({ access_token: "token-123", token_type: "Bearer" })
+
+    await expect(provider.codeVerifier()).resolves.toBe("verifier")
+    await expect(provider.tokens()).resolves.toMatchObject({ access_token: "token-123" })
   })
 })
