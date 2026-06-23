@@ -88,6 +88,32 @@ The wrapper passes its environment through to the upstream command, so per-accou
 
 For remote MCP endpoints, pass `--url`. By default MCPlexer tries Streamable HTTP first and falls back to legacy SSE.
 
+For hosted MCPs that use a normal user OAuth flow, such as Notion MCP, use browser OAuth:
+
+```json
+{
+  "mcpServers": {
+    "notion-work": {
+      "command": "mcplexer",
+      "args": [
+        "--prefix",
+        "work",
+        "--label",
+        "Work Notion",
+        "--url",
+        "https://mcp.notion.com/mcp",
+        "--oauth-flow",
+        "browser"
+      ]
+    }
+  }
+}
+```
+
+On first use, MCPlexer prints the authorization URL to stderr and opens it in your browser. After you approve access, it receives the local callback at `http://127.0.0.1:33418/oauth/callback`, stores the OAuth tokens under `~/.config/mcplexer/oauth/`, and reconnects automatically. The downstream agent only sees the prefixed MCP tools.
+
+If you cannot open a browser automatically, add `--oauth-no-open` and open the printed URL manually. Use `--oauth-callback-port` or `--oauth-store` when you need a different callback port or token cache path.
+
 If you already have an OAuth access token, let MCPlexer pass it through the MCP SDK auth provider:
 
 ```json
@@ -232,6 +258,10 @@ Options:
 - `--header <name: value>`: literal remote header. Repeatable.
 - `--header-env <name=ENV>`: remote header whose value is read from an environment variable. Repeatable.
 - `--oauth-bearer-env <ENV>`: remote OAuth bearer token read from an environment variable.
+- `--oauth-flow browser`: remote OAuth authorization-code flow with a local browser callback.
+- `--oauth-callback-port <port>`: local browser OAuth callback port. Defaults to `33418`.
+- `--oauth-store <path>`: OAuth token/client cache path for browser flow.
+- `--oauth-no-open`: print the OAuth URL without trying to open a browser.
 - `--oauth-client-id <id>`: OAuth `client_credentials` client ID.
 - `--oauth-client-secret-env <ENV>`: OAuth `client_credentials` client secret environment variable.
 - `--oauth-scope <scope>`: optional OAuth scope for `client_credentials`.
