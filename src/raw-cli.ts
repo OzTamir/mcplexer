@@ -3,6 +3,7 @@ import { z } from "zod"
 import { CliUsageError } from "./config-types.js"
 
 const TRANSPORT_MODES = ["auto", "stdio", "http", "sse"] as const
+const OAUTH_FLOWS = ["browser"] as const
 const PREFIX_PATTERN = /^[A-Za-z0-9_-]+$/u
 
 const RawCliSchema = z.object({
@@ -22,6 +23,10 @@ const RawCliSchema = z.object({
   oauthClientSecretEnv: z.string().min(1).optional(),
   oauthScope: z.string().min(1).optional(),
   oauthClientName: z.string().min(1).optional(),
+  oauthFlow: z.enum(OAUTH_FLOWS).optional(),
+  oauthCallbackPort: z.coerce.number().int().min(1).max(65535).default(33418),
+  oauthStore: z.string().min(1).optional(),
+  oauthOpenBrowser: z.boolean().default(true),
   upstreamArgs: z.array(z.string()),
   showHelp: z.boolean(),
   showVersion: z.boolean(),
@@ -44,6 +49,10 @@ type RawCliDraft = {
   oauthClientSecretEnv?: string
   oauthScope?: string
   oauthClientName?: string
+  oauthFlow?: string
+  oauthCallbackPort?: string
+  oauthStore?: string
+  oauthOpenBrowser: boolean
   upstreamArgs: readonly string[]
   showHelp: boolean
   showVersion: boolean
@@ -107,6 +116,7 @@ function createRawDraft(): RawCliDraft {
     upstreamArgs: [],
     showHelp: false,
     showVersion: false,
+    oauthOpenBrowser: true,
     separator: ":",
   }
 }
@@ -173,6 +183,21 @@ function readKnownOption(arg: string, context: OptionContext): number {
       return applyValueOption(context, "--oauth-client-name", (value) => {
         context.draft.oauthClientName = value
       })
+    case "--oauth-flow":
+      return applyValueOption(context, "--oauth-flow", (value) => {
+        context.draft.oauthFlow = value
+      })
+    case "--oauth-callback-port":
+      return applyValueOption(context, "--oauth-callback-port", (value) => {
+        context.draft.oauthCallbackPort = value
+      })
+    case "--oauth-store":
+      return applyValueOption(context, "--oauth-store", (value) => {
+        context.draft.oauthStore = value
+      })
+    case "--oauth-no-open":
+      context.draft.oauthOpenBrowser = false
+      return context.index + 1
     default:
       throw new CliUsageError(`Unknown option ${arg}. Put upstream commands after --.`)
   }

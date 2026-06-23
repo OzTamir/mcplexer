@@ -44,6 +44,27 @@ export function buildUpstreamConfig(raw: RawCliOptions, env: Environment): Upstr
 }
 
 function buildRemoteAuth(raw: RawCliOptions, env: Environment): RemoteAuthConfig {
+  if (raw.oauthFlow === "browser") {
+    if (
+      raw.oauthBearerEnv !== undefined ||
+      raw.oauthClientId !== undefined ||
+      raw.oauthClientSecretEnv !== undefined
+    ) {
+      throw new CliUsageError(
+        "Use either --oauth-flow browser, --oauth-bearer-env, or OAuth client credentials",
+      )
+    }
+
+    return {
+      kind: "browser",
+      callbackPort: raw.oauthCallbackPort,
+      openBrowser: raw.oauthOpenBrowser,
+      storePath: raw.oauthStore ?? defaultOAuthStorePath(raw, env),
+      clientName: raw.oauthClientName ?? "MCPlexer",
+      ...(raw.oauthScope === undefined ? {} : { scope: raw.oauthScope }),
+    }
+  }
+
   if (raw.oauthBearerEnv !== undefined) {
     if (raw.oauthClientId !== undefined || raw.oauthClientSecretEnv !== undefined) {
       throw new CliUsageError("Use either --oauth-bearer-env or OAuth client credentials, not both")
@@ -80,8 +101,24 @@ function hasOAuthOptions(raw: RawCliOptions): boolean {
     raw.oauthClientId !== undefined ||
     raw.oauthClientSecretEnv !== undefined ||
     raw.oauthScope !== undefined ||
-    raw.oauthClientName !== undefined
+    raw.oauthClientName !== undefined ||
+    raw.oauthFlow !== undefined ||
+    raw.oauthStore !== undefined ||
+    raw.oauthCallbackPort !== 33418 ||
+    !raw.oauthOpenBrowser
   )
+}
+
+function defaultOAuthStorePath(raw: RawCliOptions, env: Environment): string {
+  const { HOME: home } = env
+  if (home === undefined) {
+    throw new CliUsageError("--oauth-flow browser requires HOME or --oauth-store")
+  }
+
+  const storeKey = Buffer.from(`${raw.url ?? ""}\n${raw.prefix ?? ""}`, "utf8").toString(
+    "base64url",
+  )
+  return `${home}/.config/mcplexer/oauth/${storeKey}.json`
 }
 
 function rejectAuthorizationHeaderWithAuth(

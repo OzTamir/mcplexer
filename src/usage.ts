@@ -19,6 +19,10 @@ Options:
   --header <name: value> Header for remote upstreams; repeatable
   --header-env <name=ENV> Header whose value is read from an environment variable
   --oauth-bearer-env <ENV> Use an OAuth bearer token from an environment variable
+  --oauth-flow browser OAuth authorization-code flow with a local browser callback
+  --oauth-callback-port <port> Local browser OAuth callback port (defaults to 33418)
+  --oauth-store <path> OAuth token/client cache path for browser flow
+  --oauth-no-open        Print browser OAuth URL without opening it
   --oauth-client-id <id> OAuth client_credentials client_id
   --oauth-client-secret-env <ENV> OAuth client_credentials client_secret environment variable
   --oauth-scope <scope>  OAuth scope for client_credentials, space-separated when needed

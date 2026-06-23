@@ -127,6 +127,46 @@ describe("parseCliArgs", () => {
     })
   })
 
+  it("builds a remote config with browser OAuth", () => {
+    const parsed = parseCliArgs(
+      [
+        "--prefix",
+        "notion-work",
+        "--url",
+        "https://mcp.notion.com/mcp",
+        "--oauth-flow",
+        "browser",
+        "--oauth-callback-port",
+        "49887",
+        "--oauth-store",
+        "/tmp/mcplexer-notion.json",
+        "--oauth-no-open",
+        "--oauth-scope",
+        "read write",
+        "--oauth-client-name",
+        "MCPlexer Notion",
+      ],
+      {},
+    )
+
+    expect(parsed).toMatchObject({
+      kind: "config",
+      config: {
+        upstream: {
+          kind: "remote",
+          auth: {
+            kind: "browser",
+            callbackPort: 49887,
+            openBrowser: false,
+            storePath: "/tmp/mcplexer-notion.json",
+            scope: "read write",
+            clientName: "MCPlexer Notion",
+          },
+        },
+      },
+    })
+  })
+
   it("throws a usage error when prefix is missing", () => {
     expect(() => parseCliArgs(["--", "node", "server.js"])).toThrow(CliUsageError)
   })
@@ -163,6 +203,24 @@ describe("parseCliArgs", () => {
           "https://mcp.example.com/mcp",
           "--header",
           "Authorization: Bearer manual",
+          "--oauth-bearer-env",
+          "MCP_TOKEN",
+        ],
+        { MCP_TOKEN: "token-123" },
+      ),
+    ).toThrow(CliUsageError)
+  })
+
+  it("throws a usage error when browser OAuth is combined with bearer env", () => {
+    expect(() =>
+      parseCliArgs(
+        [
+          "--prefix",
+          "work",
+          "--url",
+          "https://mcp.example.com/mcp",
+          "--oauth-flow",
+          "browser",
           "--oauth-bearer-env",
           "MCP_TOKEN",
         ],
