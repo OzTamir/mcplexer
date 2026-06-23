@@ -91,7 +91,7 @@ class BrowserOAuthProvider implements OAuthClientProvider {
   }
 
   async clientInformation(): Promise<OAuthClientInformationMixed | undefined> {
-    return await this.store.clientInformation()
+    return (await this.store.clientInformation()) ?? this.initialClientInformation()
   }
 
   async saveClientInformation(clientInformation: OAuthClientInformationMixed): Promise<void> {
@@ -122,6 +122,14 @@ class BrowserOAuthProvider implements OAuthClientProvider {
     scope: "all" | "client" | "tokens" | "verifier" | "discovery",
   ): Promise<void> {
     await this.store.invalidate(scope)
+  }
+
+  private initialClientInformation(): OAuthClientInformationMixed | undefined {
+    if (this.config.clientId === undefined) {
+      return undefined
+    }
+
+    return { client_id: this.config.clientId }
   }
 }
 

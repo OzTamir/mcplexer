@@ -24,7 +24,7 @@ const RawCliSchema = z.object({
   oauthScope: z.string().min(1).optional(),
   oauthClientName: z.string().min(1).optional(),
   oauthFlow: z.enum(OAUTH_FLOWS).optional(),
-  oauthCallbackPort: z.coerce.number().int().min(1).max(65535).default(33418),
+  oauthCallbackPort: z.coerce.number().int().min(1).max(65535).optional(),
   oauthStore: z.string().min(1).optional(),
   oauthOpenBrowser: z.boolean().default(true),
   upstreamArgs: z.array(z.string()),

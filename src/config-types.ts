@@ -28,6 +28,7 @@ export type RemoteAuthConfig =
       readonly openBrowser: boolean
       readonly storePath: string
       readonly clientName: string
+      readonly clientId?: string
       readonly scope?: string
     }
 

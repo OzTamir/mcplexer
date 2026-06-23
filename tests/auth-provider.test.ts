@@ -46,6 +46,7 @@ describe("createAuthProvider", () => {
       openBrowser: false,
       storePath: join(directory, "tokens.json"),
       clientName: "MCPlexer Notion",
+      clientId: "public-client-id",
       scope: "read write",
     })
     if (provider === undefined) {
@@ -58,6 +59,7 @@ describe("createAuthProvider", () => {
       redirect_uris: ["http://127.0.0.1:49887/oauth/callback"],
       scope: "read write",
     })
+    await expect(provider.clientInformation()).resolves.toEqual({ client_id: "public-client-id" })
 
     await provider.saveCodeVerifier("verifier")
     await provider.saveTokens({ access_token: "token-123", token_type: "Bearer" })
