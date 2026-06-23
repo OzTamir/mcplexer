@@ -42,7 +42,7 @@
     }
   },
   "files": {
-    "includes": ["**", "!node_modules", "!dist", "!coverage", "!*.tsbuildinfo"]
+    "includes": ["**", "!node_modules", "!dist", "!coverage", "!*.tsbuildinfo", "!.omo"]
   },
   "overrides": [
     {
