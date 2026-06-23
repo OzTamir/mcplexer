@@ -1,0 +1,94 @@
+import { describe, expect, it } from "vitest"
+
+import { CliUsageError, MissingEnvironmentVariableError, parseCliArgs } from "../src/config.js"
+
+describe("parseCliArgs", () => {
+  it("builds a stdio upstream config when a command follows --", () => {
+    const parsed = parseCliArgs([
+      "--prefix",
+      "personal",
+      "--label",
+      "Personal",
+      "--",
+      "node",
+      "server.js",
+    ])
+
+    expect(parsed).toEqual({
+      kind: "config",
+      config: {
+        prefix: "personal",
+        label: "Personal",
+        separator: ":",
+        note: 'Note: this is one of multiple instances of this MCP, labeled "Personal".',
+        upstream: {
+          kind: "stdio",
+          command: "node",
+          args: ["server.js"],
+        },
+      },
+    })
+  })
+
+  it("builds a remote config with literal and env-backed headers", () => {
+    const parsed = parseCliArgs(
+      [
+        "--prefix=work",
+        "--url",
+        "https://mcp.example.com/mcp",
+        "--transport",
+        "http",
+        "--header",
+        "X-Tenant: work",
+        "--header-env",
+        "Authorization=WORK_AUTH",
+      ],
+      { WORK_AUTH: "Bearer token" },
+    )
+
+    expect(parsed).toEqual({
+      kind: "config",
+      config: {
+        prefix: "work",
+        label: "work",
+        separator: ":",
+        note: 'Note: this is one of multiple instances of this MCP, labeled "work".',
+        upstream: {
+          kind: "remote",
+          transport: "http",
+          url: "https://mcp.example.com/mcp",
+          headers: {
+            Authorization: "Bearer token",
+            "X-Tenant": "work",
+          },
+        },
+      },
+    })
+  })
+
+  it("throws a usage error when prefix is missing", () => {
+    expect(() => parseCliArgs(["--", "node", "server.js"])).toThrow(CliUsageError)
+  })
+
+  it("throws a usage error when prefix contains unsupported characters", () => {
+    expect(() => parseCliArgs(["--prefix", "bad:prefix", "--", "node", "server.js"])).toThrow(
+      CliUsageError,
+    )
+  })
+
+  it("throws a usage error when a referenced header env var is missing", () => {
+    expect(() =>
+      parseCliArgs(
+        [
+          "--prefix",
+          "work",
+          "--url",
+          "https://mcp.example.com/mcp",
+          "--header-env",
+          "Authorization=WORK_AUTH",
+        ],
+        {},
+      ),
+    ).toThrow(MissingEnvironmentVariableError)
+  })
+})
