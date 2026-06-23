@@ -30,6 +30,14 @@
     "multiplexer"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OzTamir/mcplexer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OzTamir/mcplexer/issues"
+  },
+  "homepage": "https://github.com/OzTamir/mcplexer#readme",
   "engines": {
     "node": ">=20.0.0"
   },
