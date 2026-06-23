@@ -4,7 +4,7 @@
   "description": "Prefixing proxy for running multiple labeled instances of the same MCP server.",
   "type": "module",
   "bin": {
-    "mcplexer": "./dist/cli.js"
+    "mcplexer": "dist/cli.js"
   },
   "exports": {
     ".": {
@@ -30,6 +30,14 @@
     "multiplexer"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OzTamir/mcplexer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OzTamir/mcplexer/issues"
+  },
+  "homepage": "https://github.com/OzTamir/mcplexer#readme",
   "engines": {
     "node": ">=20.0.0"
   },
