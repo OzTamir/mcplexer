@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "mcplexer",
-      "source": "./plugin",
+      "source": ".",
       "description": "Teaches Claude how to use MCPlexer to add new labeled MCP instances and migrate existing MCP entries to a prefixed setup.",
       "homepage": "https://github.com/OzTamir/mcplexer",
       "repository": "https://github.com/OzTamir/mcplexer",
