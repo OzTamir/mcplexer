@@ -1,0 +1,47 @@
+{
+  "name": "mcplexer",
+  "version": "0.1.0",
+  "description": "Prefixing proxy for running multiple labeled instances of the same MCP server.",
+  "type": "module",
+  "bin": {
+    "mcplexer": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "proxy",
+    "multiplexer"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^26.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
