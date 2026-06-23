@@ -13,25 +13,29 @@ It also appends a label note to every tool description, for example:
 Note: this is one of multiple instances of this MCP, labeled "Personal".
 ```
 
-## Install
+## Install from npm
 
-From this repo:
-
-```bash
-pnpm install
-pnpm build
-pnpm link --global
-```
-
-After publishing, the intended shape is:
+Install MCPlexer globally when you want to use it from `.mcp.json` files:
 
 ```bash
-pnpm add --global mcplexer
+npm install --global @oztamir/mcplexer
 ```
 
-## Local MCP wrapper
+The installed command is `mcplexer`:
 
-Use `mcplexer` as the MCP server command, then put the upstream local MCP command after `--`.
+```bash
+mcplexer --help
+```
+
+If you prefer pnpm for global packages:
+
+```bash
+pnpm add --global @oztamir/mcplexer
+```
+
+## Configure your MCP client
+
+Use `mcplexer` as the MCP server command. Put the upstream local MCP command after `--`.
 
 ```json
 {
@@ -74,8 +78,6 @@ Use `mcplexer` as the MCP server command, then put the upstream local MCP comman
 
 The wrapper passes its environment through to the upstream command, so per-account `.mcp.json` `env` values still work.
 
-## Remote MCP wrapper
-
 For remote MCP endpoints, pass `--url`. By default MCPlexer tries Streamable HTTP first and falls back to legacy SSE.
 
 ```json
@@ -106,6 +108,50 @@ You can force a remote transport when needed:
 ```bash
 mcplexer --prefix work --url https://mcp.example.com/mcp --transport http
 mcplexer --prefix legacy --url https://mcp.example.com/sse --transport sse
+```
+
+## Other ways to run MCPlexer
+
+### Run with npx
+
+You can also run MCPlexer through `npx` without a global install:
+
+```bash
+npx -y @oztamir/mcplexer --help
+```
+
+For `.mcp.json`, use `npx` as the command and put MCPlexer arguments after the package name:
+
+```json
+{
+  "mcpServers": {
+    "google-personal": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@oztamir/mcplexer",
+        "--prefix",
+        "personal",
+        "--label",
+        "Personal",
+        "--",
+        "npx",
+        "-y",
+        "@example/google-workspace-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Link a local checkout
+
+From a local checkout of this repo:
+
+```bash
+pnpm install
+pnpm build
+pnpm link --global
 ```
 
 ## CLI reference
