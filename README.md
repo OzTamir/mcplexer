@@ -26,8 +26,10 @@ pnpm link --global
 After publishing, the intended shape is:
 
 ```bash
-pnpm add --global mcplexer
+pnpm add --global @oztamir/mcplexer
 ```
+
+The installed CLI command is still `mcplexer`.
 
 ## Local MCP wrapper
 

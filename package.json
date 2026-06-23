@@ -1,5 +1,5 @@
 {
-  "name": "mcplexer",
+  "name": "@oztamir/mcplexer",
   "version": "0.1.0",
   "description": "Prefixing proxy for running multiple labeled instances of the same MCP server.",
   "type": "module",
