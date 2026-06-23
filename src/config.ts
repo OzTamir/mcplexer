@@ -8,6 +8,7 @@ export type {
   CliConfig,
   CliParseResult,
   Environment,
+  RemoteAuthConfig,
   RemoteUpstreamConfig,
   StdioUpstreamConfig,
   UpstreamConfig,

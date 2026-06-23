@@ -18,6 +18,11 @@ Options:
   --transport <mode>     stdio, auto, http, or sse (remote defaults to auto)
   --header <name: value> Header for remote upstreams; repeatable
   --header-env <name=ENV> Header whose value is read from an environment variable
+  --oauth-bearer-env <ENV> Use an OAuth bearer token from an environment variable
+  --oauth-client-id <id> OAuth client_credentials client_id
+  --oauth-client-secret-env <ENV> OAuth client_credentials client_secret environment variable
+  --oauth-scope <scope>  OAuth scope for client_credentials, space-separated when needed
+  --oauth-client-name <name> OAuth client display name for metadata
   --help                 Show this help
   --version              Show the version
 `
