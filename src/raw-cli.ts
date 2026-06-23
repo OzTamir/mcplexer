@@ -17,6 +17,11 @@ const RawCliSchema = z.object({
   url: z.url().optional(),
   headers: z.array(z.string()),
   headerEnvs: z.array(z.string()),
+  oauthBearerEnv: z.string().min(1).optional(),
+  oauthClientId: z.string().min(1).optional(),
+  oauthClientSecretEnv: z.string().min(1).optional(),
+  oauthScope: z.string().min(1).optional(),
+  oauthClientName: z.string().min(1).optional(),
   upstreamArgs: z.array(z.string()),
   showHelp: z.boolean(),
   showVersion: z.boolean(),
@@ -34,6 +39,11 @@ type RawCliDraft = {
   url?: string
   headers: string[]
   headerEnvs: string[]
+  oauthBearerEnv?: string
+  oauthClientId?: string
+  oauthClientSecretEnv?: string
+  oauthScope?: string
+  oauthClientName?: string
   upstreamArgs: readonly string[]
   showHelp: boolean
   showVersion: boolean
@@ -142,6 +152,26 @@ function readKnownOption(arg: string, context: OptionContext): number {
     case "--header-env":
       return applyValueOption(context, "--header-env", (value) => {
         context.draft.headerEnvs.push(value)
+      })
+    case "--oauth-bearer-env":
+      return applyValueOption(context, "--oauth-bearer-env", (value) => {
+        context.draft.oauthBearerEnv = value
+      })
+    case "--oauth-client-id":
+      return applyValueOption(context, "--oauth-client-id", (value) => {
+        context.draft.oauthClientId = value
+      })
+    case "--oauth-client-secret-env":
+      return applyValueOption(context, "--oauth-client-secret-env", (value) => {
+        context.draft.oauthClientSecretEnv = value
+      })
+    case "--oauth-scope":
+      return applyValueOption(context, "--oauth-scope", (value) => {
+        context.draft.oauthScope = value
+      })
+    case "--oauth-client-name":
+      return applyValueOption(context, "--oauth-client-name", (value) => {
+        context.draft.oauthClientName = value
       })
     default:
       throw new CliUsageError(`Unknown option ${arg}. Put upstream commands after --.`)

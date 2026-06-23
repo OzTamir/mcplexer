@@ -9,7 +9,19 @@ export type RemoteUpstreamConfig = {
   readonly transport: "auto" | "http" | "sse"
   readonly url: string
   readonly headers: Readonly<Record<string, string>>
+  readonly auth: RemoteAuthConfig
 }
+
+export type RemoteAuthConfig =
+  | { readonly kind: "none" }
+  | { readonly kind: "bearer"; readonly token: string }
+  | {
+      readonly kind: "client_credentials"
+      readonly clientId: string
+      readonly clientSecret: string
+      readonly scope?: string
+      readonly clientName?: string
+    }
 
 export type UpstreamConfig = StdioUpstreamConfig | RemoteUpstreamConfig
 
@@ -37,7 +49,10 @@ export class CliUsageError extends BaseUsageError {
 export class MissingEnvironmentVariableError extends BaseUsageError {
   readonly name = "MissingEnvironmentVariableError"
 
-  constructor(readonly variableName: string) {
-    super(`Environment variable ${variableName} is required by --header-env`)
+  constructor(
+    readonly variableName: string,
+    readonly optionName = "--header-env",
+  ) {
+    super(`Environment variable ${variableName} is required by ${optionName}`)
   }
 }

@@ -1,5 +1,6 @@
 export type {
   CliConfig,
+  RemoteAuthConfig,
   RemoteUpstreamConfig,
   StdioUpstreamConfig,
   UpstreamConfig,

@@ -1,4 +1,4 @@
-import type { Environment, UpstreamConfig } from "./config-types.js"
+import type { Environment, RemoteAuthConfig, UpstreamConfig } from "./config-types.js"
 import { CliUsageError, MissingEnvironmentVariableError } from "./config-types.js"
 import type { RawCliOptions, TransportMode } from "./raw-cli.js"
 
@@ -10,12 +10,21 @@ export function buildUpstreamConfig(raw: RawCliOptions, env: Environment): Upstr
       )
     }
 
+    const headers = buildHeaders(raw.headers, raw.headerEnvs, env)
+    const auth = buildRemoteAuth(raw, env)
+    rejectAuthorizationHeaderWithAuth(headers, auth)
+
     return {
       kind: "remote",
       transport: remoteTransport(raw.transport),
       url: raw.url,
-      headers: buildHeaders(raw.headers, raw.headerEnvs, env),
+      headers,
+      auth,
     }
+  }
+
+  if (hasOAuthOptions(raw)) {
+    throw new CliUsageError("OAuth options require --url")
   }
 
   if (raw.transport !== undefined && raw.transport !== "stdio") {
@@ -31,6 +40,62 @@ export function buildUpstreamConfig(raw: RawCliOptions, env: Environment): Upstr
     kind: "stdio",
     command,
     args: raw.upstreamArgs.slice(1),
+  }
+}
+
+function buildRemoteAuth(raw: RawCliOptions, env: Environment): RemoteAuthConfig {
+  if (raw.oauthBearerEnv !== undefined) {
+    if (raw.oauthClientId !== undefined || raw.oauthClientSecretEnv !== undefined) {
+      throw new CliUsageError("Use either --oauth-bearer-env or OAuth client credentials, not both")
+    }
+
+    return {
+      kind: "bearer",
+      token: readEnv(raw.oauthBearerEnv, env, "--oauth-bearer-env"),
+    }
+  }
+
+  if (!hasOAuthOptions(raw)) {
+    return { kind: "none" }
+  }
+
+  if (raw.oauthClientId === undefined || raw.oauthClientSecretEnv === undefined) {
+    throw new CliUsageError(
+      "OAuth client credentials require --oauth-client-id and --oauth-client-secret-env",
+    )
+  }
+
+  return {
+    kind: "client_credentials",
+    clientId: raw.oauthClientId,
+    clientSecret: readEnv(raw.oauthClientSecretEnv, env, "--oauth-client-secret-env"),
+    ...(raw.oauthScope === undefined ? {} : { scope: raw.oauthScope }),
+    ...(raw.oauthClientName === undefined ? {} : { clientName: raw.oauthClientName }),
+  }
+}
+
+function hasOAuthOptions(raw: RawCliOptions): boolean {
+  return (
+    raw.oauthBearerEnv !== undefined ||
+    raw.oauthClientId !== undefined ||
+    raw.oauthClientSecretEnv !== undefined ||
+    raw.oauthScope !== undefined ||
+    raw.oauthClientName !== undefined
+  )
+}
+
+function rejectAuthorizationHeaderWithAuth(
+  headers: Readonly<Record<string, string>>,
+  auth: RemoteAuthConfig,
+): void {
+  if (auth.kind === "none") {
+    return
+  }
+
+  for (const headerName of Object.keys(headers)) {
+    if (headerName.toLowerCase() === "authorization") {
+      throw new CliUsageError("Do not combine OAuth options with an Authorization header")
+    }
   }
 }
 
@@ -97,10 +162,14 @@ function parseHeaderEnv(
     throw new CliUsageError("Header env name and variable cannot be empty")
   }
 
+  return { name, value: readEnv(variableName, env, "--header-env") }
+}
+
+function readEnv(variableName: string, env: Environment, optionName: string): string {
   const value = env[variableName]
   if (value === undefined) {
-    throw new MissingEnvironmentVariableError(variableName)
+    throw new MissingEnvironmentVariableError(variableName, optionName)
   }
 
-  return { name, value }
+  return value
 }

@@ -40,6 +40,7 @@ Do not run a dev server; this is a CLI/MCP stdio utility.
 - MCPlexer itself always speaks stdio to the downstream client.
 - Local upstream MCPs are launched with `-- <command> [args...]` and inherit the wrapper environment.
 - Remote upstream MCPs use `--url`; `auto` tries Streamable HTTP first, then SSE.
+- Remote OAuth auth must use the MCP SDK `authProvider` path, not hand-built `Authorization` headers.
 - Listed tools must preserve upstream metadata except `name` and `description`.
 - `tools/call` must reject names that do not start with the configured prefix plus separator.
 - `tools/call` must strip only the configured prefix before calling upstream.

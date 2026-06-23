@@ -88,6 +88,8 @@ The wrapper passes its environment through to the upstream command, so per-accou
 
 For remote MCP endpoints, pass `--url`. By default MCPlexer tries Streamable HTTP first and falls back to legacy SSE.
 
+If you already have an OAuth access token, let MCPlexer pass it through the MCP SDK auth provider:
+
 ```json
 {
   "mcpServers": {
@@ -100,16 +102,47 @@ For remote MCP endpoints, pass `--url`. By default MCPlexer tries Streamable HTT
         "Work",
         "--url",
         "https://mcp.example.com/mcp",
-        "--header-env",
-        "Authorization=WORK_MCP_AUTH"
+        "--oauth-bearer-env",
+        "WORK_MCP_TOKEN"
       ],
       "env": {
-        "WORK_MCP_AUTH": "Bearer replace-me"
+        "WORK_MCP_TOKEN": "replace-me"
       }
     }
   }
 }
 ```
+
+For machine-to-machine OAuth, use client credentials:
+
+```json
+{
+  "mcpServers": {
+    "calendar-work-remote": {
+      "command": "mcplexer",
+      "args": [
+        "--prefix",
+        "work",
+        "--label",
+        "Work",
+        "--url",
+        "https://mcp.example.com/mcp",
+        "--oauth-client-id",
+        "your-client-id",
+        "--oauth-client-secret-env",
+        "WORK_MCP_CLIENT_SECRET",
+        "--oauth-scope",
+        "calendar.read calendar.write"
+      ],
+      "env": {
+        "WORK_MCP_CLIENT_SECRET": "replace-me"
+      }
+    }
+  }
+}
+```
+
+For non-OAuth remote authentication, you can still pass static headers with `--header` or `--header-env`. Do not combine OAuth options with an `Authorization` header.
 
 You can force a remote transport when needed:
 
@@ -198,6 +231,11 @@ Options:
 - `--transport <mode>`: `stdio`, `auto`, `http`, or `sse`.
 - `--header <name: value>`: literal remote header. Repeatable.
 - `--header-env <name=ENV>`: remote header whose value is read from an environment variable. Repeatable.
+- `--oauth-bearer-env <ENV>`: remote OAuth bearer token read from an environment variable.
+- `--oauth-client-id <id>`: OAuth `client_credentials` client ID.
+- `--oauth-client-secret-env <ENV>`: OAuth `client_credentials` client secret environment variable.
+- `--oauth-scope <scope>`: optional OAuth scope for `client_credentials`.
+- `--oauth-client-name <name>`: optional OAuth client display name for metadata.
 
 ## How it works
 
