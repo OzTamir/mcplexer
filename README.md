@@ -1,4 +1,12 @@
-# MCPlexer
+<div align="center">
+  <img src="https://raw.githubusercontent.com/OzTamir/mcplexer/main/assets/mcplexer.svg" alt="MCPlexer logo" width="128" height="128">
+  <h1>MCPlexer</h1>
+  <p>
+    <a href="https://www.npmjs.com/package/@oztamir/mcplexer">
+      <img alt="npm package" src="https://img.shields.io/npm/v/%40oztamir%2Fmcplexer?logo=npm&label=npm&color=cb3837">
+    </a>
+  </p>
+</div>
 
 MCPlexer is a tiny MCP proxy for running multiple labeled instances of the same MCP server without tool-name collisions.
 
