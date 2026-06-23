@@ -1,8 +1,11 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
+import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 
+import { createAuthProvider } from "./auth-provider.js"
 import type { RemoteUpstreamConfig, UpstreamConfig } from "./config.js"
 import { ExactOptionalTransport } from "./transport-adapter.js"
 import { VERSION } from "./version.js"
@@ -97,9 +100,7 @@ async function connectRemoteAuto(config: RemoteUpstreamConfig): Promise<Connecte
 
 async function connectStreamableHttp(config: RemoteUpstreamConfig): Promise<ConnectedUpstream> {
   const client = createClient()
-  const transport = new StreamableHTTPClientTransport(new URL(config.url), {
-    requestInit: { headers: config.headers },
-  })
+  const transport = new StreamableHTTPClientTransport(new URL(config.url), httpOptions(config))
 
   await client.connect(new ExactOptionalTransport(transport))
   return { client }
@@ -107,12 +108,28 @@ async function connectStreamableHttp(config: RemoteUpstreamConfig): Promise<Conn
 
 async function connectSse(config: RemoteUpstreamConfig): Promise<ConnectedUpstream> {
   const client = createClient()
-  const transport = new SSEClientTransport(new URL(config.url), {
-    requestInit: { headers: config.headers },
-  })
+  const transport = new SSEClientTransport(new URL(config.url), sseOptions(config))
 
   await client.connect(new ExactOptionalTransport(transport))
   return { client }
+}
+
+function httpOptions(config: RemoteUpstreamConfig): StreamableHTTPClientTransportOptions {
+  const authProvider = createAuthProvider(config.auth)
+  if (authProvider === undefined) {
+    return { requestInit: { headers: config.headers } }
+  }
+
+  return { requestInit: { headers: config.headers }, authProvider }
+}
+
+function sseOptions(config: RemoteUpstreamConfig): SSEClientTransportOptions {
+  const authProvider = createAuthProvider(config.auth)
+  if (authProvider === undefined) {
+    return { requestInit: { headers: config.headers } }
+  }
+
+  return { requestInit: { headers: config.headers }, authProvider }
 }
 
 async function tryConnection(connect: () => Promise<ConnectedUpstream>): Promise<ConnectionResult> {
