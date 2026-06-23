@@ -1,0 +1,13 @@
+{
+  "name": "mcplexer",
+  "displayName": "MCPlexer",
+  "description": "Use MCPlexer to run multiple labeled instances of the same MCP server without tool-name collisions, and to migrate existing MCP entries to a prefixed setup.",
+  "version": "0.1.2",
+  "author": {
+    "name": "Oz Tamir"
+  },
+  "homepage": "https://github.com/OzTamir/mcplexer",
+  "repository": "https://github.com/OzTamir/mcplexer",
+  "license": "MIT",
+  "keywords": ["mcp", "proxy", "multiplexer", "prefix"]
+}

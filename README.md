@@ -162,6 +162,25 @@ pnpm build
 pnpm link --global
 ```
 
+## Agent skill
+
+This repo exposes an [agent skill](skills/mcplexer) that teaches AI coding agents
+when and how to use MCPlexer — adding a second labeled instance of an MCP server,
+and migrating an existing MCP entry to a prefixed setup.
+
+Install it with [`npx skills`](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add OzTamir/mcplexer
+```
+
+Or install it as a Claude Code plugin:
+
+```text
+/plugin marketplace add OzTamir/mcplexer
+/plugin install mcplexer@mcplexer
+```
+
 ## CLI reference
 
 ```text
