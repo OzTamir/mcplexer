@@ -127,6 +127,72 @@ describe("parseCliArgs", () => {
     })
   })
 
+  it("builds a remote config with browser OAuth", () => {
+    const parsed = parseCliArgs(
+      [
+        "--prefix",
+        "notion-work",
+        "--url",
+        "https://mcp.notion.com/mcp",
+        "--oauth-flow",
+        "browser",
+        "--oauth-callback-port",
+        "49887",
+        "--oauth-store",
+        "/tmp/mcplexer-notion.json",
+        "--oauth-no-open",
+        "--oauth-client-id",
+        "public-client-id",
+        "--oauth-scope",
+        "read write",
+        "--oauth-client-name",
+        "MCPlexer Notion",
+      ],
+      {},
+    )
+
+    expect(parsed).toMatchObject({
+      kind: "config",
+      config: {
+        upstream: {
+          kind: "remote",
+          auth: {
+            kind: "browser",
+            callbackPort: 49887,
+            openBrowser: false,
+            storePath: "/tmp/mcplexer-notion.json",
+            clientId: "public-client-id",
+            scope: "read write",
+            clientName: "MCPlexer Notion",
+          },
+        },
+      },
+    })
+  })
+
+  it("builds a browser OAuth config with a deterministic dynamic callback port", () => {
+    const first = parseCliArgs(
+      ["--prefix", "notion-work", "--url", "https://mcp.notion.com/mcp", "--oauth-flow", "browser"],
+      { HOME: "/Users/test" },
+    )
+    const second = parseCliArgs(
+      ["--prefix", "notion-work", "--url", "https://mcp.notion.com/mcp", "--oauth-flow", "browser"],
+      { HOME: "/Users/test" },
+    )
+
+    expect(first).toEqual(second)
+    if (first.kind !== "config" || first.config.upstream.kind !== "remote") {
+      throw new Error("Expected remote config")
+    }
+
+    expect(first.config.upstream.auth).toMatchObject({ kind: "browser" })
+    if (first.config.upstream.auth.kind !== "browser") {
+      throw new Error("Expected browser auth")
+    }
+    expect(first.config.upstream.auth.callbackPort).toBeGreaterThanOrEqual(49152)
+    expect(first.config.upstream.auth.callbackPort).toBeLessThanOrEqual(65535)
+  })
+
   it("throws a usage error when prefix is missing", () => {
     expect(() => parseCliArgs(["--", "node", "server.js"])).toThrow(CliUsageError)
   })
@@ -168,6 +234,30 @@ describe("parseCliArgs", () => {
         ],
         { MCP_TOKEN: "token-123" },
       ),
+    ).toThrow(CliUsageError)
+  })
+
+  it("throws a usage error when browser OAuth is combined with bearer env", () => {
+    expect(() =>
+      parseCliArgs(
+        [
+          "--prefix",
+          "work",
+          "--url",
+          "https://mcp.example.com/mcp",
+          "--oauth-flow",
+          "browser",
+          "--oauth-bearer-env",
+          "MCP_TOKEN",
+        ],
+        { MCP_TOKEN: "token-123" },
+      ),
+    ).toThrow(CliUsageError)
+  })
+
+  it("throws a usage error when a browser-only option is used without browser OAuth", () => {
+    expect(() =>
+      parseCliArgs(["--prefix", "work", "--url", "https://mcp.example.com/mcp", "--oauth-no-open"]),
     ).toThrow(CliUsageError)
   })
 

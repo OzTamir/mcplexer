@@ -22,6 +22,15 @@ export type RemoteAuthConfig =
       readonly scope?: string
       readonly clientName?: string
     }
+  | {
+      readonly kind: "browser"
+      readonly callbackPort: number
+      readonly openBrowser: boolean
+      readonly storePath: string
+      readonly clientName: string
+      readonly clientId?: string
+      readonly scope?: string
+    }
 
 export type UpstreamConfig = StdioUpstreamConfig | RemoteUpstreamConfig
 

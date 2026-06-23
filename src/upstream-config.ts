@@ -1,6 +1,11 @@
+import { createHash } from "node:crypto"
+
 import type { Environment, RemoteAuthConfig, UpstreamConfig } from "./config-types.js"
 import { CliUsageError, MissingEnvironmentVariableError } from "./config-types.js"
 import type { RawCliOptions, TransportMode } from "./raw-cli.js"
+
+const MIN_DYNAMIC_CALLBACK_PORT = 49152
+const MAX_DYNAMIC_CALLBACK_PORT = 65535
 
 export function buildUpstreamConfig(raw: RawCliOptions, env: Environment): UpstreamConfig {
   if (raw.url !== undefined) {
@@ -44,6 +49,28 @@ export function buildUpstreamConfig(raw: RawCliOptions, env: Environment): Upstr
 }
 
 function buildRemoteAuth(raw: RawCliOptions, env: Environment): RemoteAuthConfig {
+  if (raw.oauthFlow === "browser") {
+    if (raw.oauthBearerEnv !== undefined || raw.oauthClientSecretEnv !== undefined) {
+      throw new CliUsageError(
+        "Browser OAuth cannot be combined with bearer tokens or client secrets",
+      )
+    }
+
+    return {
+      kind: "browser",
+      callbackPort: raw.oauthCallbackPort ?? defaultOAuthCallbackPort(raw),
+      openBrowser: raw.oauthOpenBrowser,
+      storePath: raw.oauthStore ?? defaultOAuthStorePath(raw, env),
+      clientName: raw.oauthClientName ?? "MCPlexer",
+      ...(raw.oauthClientId === undefined ? {} : { clientId: raw.oauthClientId }),
+      ...(raw.oauthScope === undefined ? {} : { scope: raw.oauthScope }),
+    }
+  }
+
+  if (hasBrowserOAuthOptions(raw)) {
+    throw new CliUsageError("Browser OAuth options require --oauth-flow browser")
+  }
+
   if (raw.oauthBearerEnv !== undefined) {
     if (raw.oauthClientId !== undefined || raw.oauthClientSecretEnv !== undefined) {
       throw new CliUsageError("Use either --oauth-bearer-env or OAuth client credentials, not both")
@@ -80,8 +107,36 @@ function hasOAuthOptions(raw: RawCliOptions): boolean {
     raw.oauthClientId !== undefined ||
     raw.oauthClientSecretEnv !== undefined ||
     raw.oauthScope !== undefined ||
-    raw.oauthClientName !== undefined
+    raw.oauthClientName !== undefined ||
+    raw.oauthFlow !== undefined ||
+    hasBrowserOAuthOptions(raw)
   )
+}
+
+function hasBrowserOAuthOptions(raw: RawCliOptions): boolean {
+  return (
+    raw.oauthStore !== undefined || raw.oauthCallbackPort !== undefined || !raw.oauthOpenBrowser
+  )
+}
+
+function defaultOAuthCallbackPort(raw: RawCliOptions): number {
+  const hash = createHash("sha256")
+    .update(`${raw.url ?? ""}\n${raw.prefix ?? ""}`)
+    .digest()
+  const range = MAX_DYNAMIC_CALLBACK_PORT - MIN_DYNAMIC_CALLBACK_PORT + 1
+  return MIN_DYNAMIC_CALLBACK_PORT + (hash.readUInt32BE(0) % range)
+}
+
+function defaultOAuthStorePath(raw: RawCliOptions, env: Environment): string {
+  const { HOME: home } = env
+  if (home === undefined) {
+    throw new CliUsageError("--oauth-flow browser requires HOME or --oauth-store")
+  }
+
+  const storeKey = Buffer.from(`${raw.url ?? ""}\n${raw.prefix ?? ""}`, "utf8").toString(
+    "base64url",
+  )
+  return `${home}/.config/mcplexer/oauth/${storeKey}.json`
 }
 
 function rejectAuthorizationHeaderWithAuth(

@@ -1,3 +1,4 @@
+import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
@@ -5,7 +6,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 
-import { createAuthProvider } from "./auth-provider.js"
+import { createAuthSession, type RemoteAuthSession } from "./auth-provider.js"
 import type { RemoteUpstreamConfig, UpstreamConfig } from "./config.js"
 import { ExactOptionalTransport } from "./transport-adapter.js"
 import { VERSION } from "./version.js"
@@ -99,37 +100,122 @@ async function connectRemoteAuto(config: RemoteUpstreamConfig): Promise<Connecte
 }
 
 async function connectStreamableHttp(config: RemoteUpstreamConfig): Promise<ConnectedUpstream> {
-  const client = createClient()
-  const transport = new StreamableHTTPClientTransport(new URL(config.url), httpOptions(config))
+  const authSession = createAuthSession(config.auth)
+  const attempt = () => streamableHttpAttempt(config, authSession)
+  const result = await attempt()
+  if (result.ok) {
+    return result.upstream
+  }
 
-  await client.connect(new ExactOptionalTransport(transport))
-  return { client }
+  if (
+    !(result.error instanceof UnauthorizedError) ||
+    authSession?.completeAuthorization === undefined
+  ) {
+    throw result.error
+  }
+
+  await authSession.completeAuthorization((code) => result.transport.finishAuth(code))
+  return completedAttempt(await attempt())
 }
 
 async function connectSse(config: RemoteUpstreamConfig): Promise<ConnectedUpstream> {
+  const authSession = createAuthSession(config.auth)
+  const attempt = () => sseAttempt(config, authSession)
+  const result = await attempt()
+  if (result.ok) {
+    return result.upstream
+  }
+
+  if (
+    !(result.error instanceof UnauthorizedError) ||
+    authSession?.completeAuthorization === undefined
+  ) {
+    throw result.error
+  }
+
+  await authSession.completeAuthorization((code) => result.transport.finishAuth(code))
+  return completedAttempt(await attempt())
+}
+
+type StreamableHttpAttempt =
+  | { readonly ok: true; readonly upstream: ConnectedUpstream }
+  | { readonly ok: false; readonly error: Error; readonly transport: StreamableHTTPClientTransport }
+
+type SseAttempt =
+  | { readonly ok: true; readonly upstream: ConnectedUpstream }
+  | { readonly ok: false; readonly error: Error; readonly transport: SSEClientTransport }
+
+async function streamableHttpAttempt(
+  config: RemoteUpstreamConfig,
+  authSession: RemoteAuthSession | undefined,
+): Promise<StreamableHttpAttempt> {
   const client = createClient()
-  const transport = new SSEClientTransport(new URL(config.url), sseOptions(config))
+  const transport = new StreamableHTTPClientTransport(
+    new URL(config.url),
+    httpOptions(config, authSession),
+  )
 
-  await client.connect(new ExactOptionalTransport(transport))
-  return { client }
+  try {
+    await client.connect(new ExactOptionalTransport(transport))
+    return { ok: true, upstream: { client } }
+  } catch (error) {
+    await client.close()
+    if (error instanceof Error) {
+      return { ok: false, error, transport }
+    }
+
+    return { ok: false, error: new NonErrorThrownError(error), transport }
+  }
 }
 
-function httpOptions(config: RemoteUpstreamConfig): StreamableHTTPClientTransportOptions {
-  const authProvider = createAuthProvider(config.auth)
-  if (authProvider === undefined) {
+async function sseAttempt(
+  config: RemoteUpstreamConfig,
+  authSession: RemoteAuthSession | undefined,
+): Promise<SseAttempt> {
+  const client = createClient()
+  const transport = new SSEClientTransport(new URL(config.url), sseOptions(config, authSession))
+
+  try {
+    await client.connect(new ExactOptionalTransport(transport))
+    return { ok: true, upstream: { client } }
+  } catch (error) {
+    await client.close()
+    if (error instanceof Error) {
+      return { ok: false, error, transport }
+    }
+
+    return { ok: false, error: new NonErrorThrownError(error), transport }
+  }
+}
+
+function completedAttempt(result: StreamableHttpAttempt | SseAttempt): ConnectedUpstream {
+  if (result.ok) {
+    return result.upstream
+  }
+
+  throw result.error
+}
+
+function httpOptions(
+  config: RemoteUpstreamConfig,
+  authSession: RemoteAuthSession | undefined,
+): StreamableHTTPClientTransportOptions {
+  if (authSession === undefined) {
     return { requestInit: { headers: config.headers } }
   }
 
-  return { requestInit: { headers: config.headers }, authProvider }
+  return { requestInit: { headers: config.headers }, authProvider: authSession.provider }
 }
 
-function sseOptions(config: RemoteUpstreamConfig): SSEClientTransportOptions {
-  const authProvider = createAuthProvider(config.auth)
-  if (authProvider === undefined) {
+function sseOptions(
+  config: RemoteUpstreamConfig,
+  authSession: RemoteAuthSession | undefined,
+): SSEClientTransportOptions {
+  if (authSession === undefined) {
     return { requestInit: { headers: config.headers } }
   }
 
-  return { requestInit: { headers: config.headers }, authProvider }
+  return { requestInit: { headers: config.headers }, authProvider: authSession.provider }
 }
 
 async function tryConnection(connect: () => Promise<ConnectedUpstream>): Promise<ConnectionResult> {
