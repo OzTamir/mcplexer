@@ -23,7 +23,7 @@ Options:
   --oauth-callback-port <port> Local browser OAuth callback port (defaults to 33418)
   --oauth-store <path> OAuth token/client cache path for browser flow
   --oauth-no-open        Print browser OAuth URL without opening it
-  --oauth-client-id <id> OAuth client_credentials client_id
+  --oauth-client-id <id> OAuth client_id for browser or client_credentials flows
   --oauth-client-secret-env <ENV> OAuth client_credentials client_secret environment variable
   --oauth-scope <scope>  OAuth scope for client_credentials, space-separated when needed
   --oauth-client-name <name> OAuth client display name for metadata
